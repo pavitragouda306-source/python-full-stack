@@ -4,6 +4,12 @@ from .models import Student_table
 from .forms import Student_form_data
 from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Student_table
+from .serializers import Studentserializer
+
 
 # Create your views here.
 def home(request):
@@ -43,23 +49,45 @@ def user_login(request):
     if request.method=='POST':
        username=request.POST['username']
        password=request.POST['password']
-       user=authenticate(
-           request,
-           username=username,
-           password=password
-       )
+       user=authenticate(request,username=username,password=password)
        if user is not None:
            login(request,user)
            return redirect('dashboard')
+           
        else:
            return HttpResponse("Invalid username or password")
     return render(request,'login.html')
 @login_required(login_url='login')
 def dashboard(request):
     return render(request,'dashboard.html')
+
 def user_logout(request):
     if request.method=='POST':
         logout(request)
         return HttpResponse("you have logged out successfully!")
     return HttpResponse("Invalid request!")
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Student_table
+from .serializers import Studentserializer
+@api_view(['GET','POST'])
+def Student_api(request):
+    if request.method == 'GET':
+        students = Student_table.objects.all()
+        serializer = Studentserializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    elif request.method == 'POST':
+        serializer = Studentserializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            ) 
+        
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
        
